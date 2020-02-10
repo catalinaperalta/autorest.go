@@ -79,7 +79,7 @@ class StructDef {
         // tags aren't required for response types
         tag = '';
       }
-      text += `\t${prop.language.go!.name} ${this.byref(prop)}${typeName}${tag}\n`;
+      text += `\t${prop.language.go!.name} ${typeName}${tag}\n`;
     }
     text += '}\n\n';
     if (this.Language.errorType) {
@@ -104,13 +104,6 @@ class StructDef {
       text += '}\n\n';
     }
     return text;
-  }
-
-  private byref(prop: Property): string {
-    if (prop.language.go!.noByRef === true) {
-      return '';
-    }
-    return '*';
   }
 }
 
