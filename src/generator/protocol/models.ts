@@ -133,7 +133,10 @@ class StructDef {
           //     <title>Overview</title>
           //   </slide>
           // </slideshow>
-          if (prop.schema.serialization?.xml?.wrapped) {
+
+          // arrays in the response type are handled slightly different as we
+          // unmarshal directly into them so no need to add the unwrapping.
+          if (prop.schema.serialization?.xml?.wrapped && this.Language.responseType === undefined) {
             serialization += `>${inner}`;
           } else {
             serialization = inner;
@@ -141,8 +144,9 @@ class StructDef {
         }
       }
       let tag = ` \`${prop.schema.language.go!.marshallingFormat}:"${serialization}"\``;
-      if (this.Language.responseType) {
-        // tags aren't required for response types
+      // if this is a response type then omit the tag IFF the marshalling format
+      // is JSON or it's the RawResponse field.  XML marshalling needs a tag.
+      if (this.Language.responseType && (prop.schema.language.go!.marshallingFormat === 'json' || prop.language.go!.name === 'RawResponse')) {
         tag = '';
       }
       text += `\t${prop.language.go!.name} *${typeName}${tag}\n`;

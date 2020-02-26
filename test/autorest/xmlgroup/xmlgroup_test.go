@@ -6,8 +6,8 @@ package xmlrouptest
 import (
 	"context"
 	"generatortests/autorest/generated/xmlgroup"
+	"generatortests/helpers"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 
@@ -20,18 +20,6 @@ func getXMLClient(t *testing.T) xmlgroup.XMLOperations {
 		t.Fatalf("failed to create byte client: %v", err)
 	}
 	return client.XMLOperations()
-}
-
-func deepEqualOrFatal(t *testing.T, result interface{}, expected interface{}) {
-	if !reflect.DeepEqual(result, expected) {
-		t.Fatalf("got %+v, want %+v", result, expected)
-	}
-}
-
-func verifyStatusCode(t *testing.T, result, expected int) {
-	if result != expected {
-		t.Fatalf("got status code %d, want %d", result, expected)
-	}
 }
 
 func toTimePtr(layout string, value string) *time.Time {
@@ -48,20 +36,18 @@ func TestGetACLs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetACLsResponse{
-		StatusCode: http.StatusOK,
-		SignedIdentifiers: &[]xmlgroup.SignedIDentifier{
-			xmlgroup.SignedIDentifier{
-				ID: to.StringPtr("MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="),
-				AccessPolicy: &xmlgroup.AccessPolicy{
-					Start:      toTimePtr(time.RFC3339Nano, "2009-09-28T08:49:37.123Z"),
-					Expiry:     toTimePtr(time.RFC3339Nano, "2009-09-29T08:49:37.123Z"),
-					Permission: to.StringPtr("rwd"),
-				},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &[]xmlgroup.SignedIDentifier{
+		xmlgroup.SignedIDentifier{
+			ID: to.StringPtr("MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="),
+			AccessPolicy: &xmlgroup.AccessPolicy{
+				Start:      toTimePtr(time.RFC3339Nano, "2009-09-28T08:49:37.123Z"),
+				Expiry:     toTimePtr(time.RFC3339Nano, "2009-09-29T08:49:37.123Z"),
+				Permission: to.StringPtr("rwd"),
 			},
 		},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.SignedIdentifiers, expected)
 }
 
 func TestGetComplexTypeRefNoMeta(t *testing.T) {
@@ -70,16 +56,14 @@ func TestGetComplexTypeRefNoMeta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetComplexTypeRefNoMetaResponse{
-		StatusCode: http.StatusOK,
-		RootWithRefAndNoMeta: &xmlgroup.RootWithRefAndNoMeta{
-			RefToModel: &xmlgroup.ComplexTypeNoMeta{
-				ID: to.StringPtr("myid"),
-			},
-			Something: to.StringPtr("else"),
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.RootWithRefAndNoMeta{
+		RefToModel: &xmlgroup.ComplexTypeNoMeta{
+			ID: to.StringPtr("myid"),
 		},
+		Something: to.StringPtr("else"),
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.RootWithRefAndNoMeta, expected)
 }
 
 func TestGetComplexTypeRefWithMeta(t *testing.T) {
@@ -92,15 +76,13 @@ func TestGetEmptyChildElement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetEmptyChildElementResponse{
-		StatusCode: http.StatusOK,
-		Banana: &xmlgroup.Banana{
-			Name:       to.StringPtr("Unknown Banana"),
-			Expiration: toTimePtr(time.RFC3339Nano, "2012-02-24T00:53:52.789Z"),
-			Flavor:     to.StringPtr(""),
-		},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.Banana{
+		Name:       to.StringPtr("Unknown Banana"),
+		Expiration: toTimePtr(time.RFC3339Nano, "2012-02-24T00:53:52.789Z"),
+		Flavor:     to.StringPtr(""),
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.Banana, expected)
 }
 
 func TestGetEmptyList(t *testing.T) {
@@ -109,11 +91,9 @@ func TestGetEmptyList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetEmptyListResponse{
-		StatusCode: http.StatusOK,
-		Slideshow:  &xmlgroup.Slideshow{},
-	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.Slideshow{}
+	helpers.DeepEqualOrFatal(t, result.Slideshow, expected)
 }
 
 func TestGetEmptyRootList(t *testing.T) {
@@ -122,10 +102,10 @@ func TestGetEmptyRootList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetEmptyRootListResponse{
-		StatusCode: http.StatusOK,
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	if result.Bananas != nil {
+		t.Fatal("expected nil slice")
 	}
-	deepEqualOrFatal(t, result, expected)
 }
 
 func TestGetEmptyWrappedLists(t *testing.T) {
@@ -134,11 +114,9 @@ func TestGetEmptyWrappedLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetEmptyWrappedListsResponse{
-		StatusCode:  http.StatusOK,
-		AppleBarrel: &xmlgroup.AppleBarrel{},
-	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.AppleBarrel{}
+	helpers.DeepEqualOrFatal(t, result.AppleBarrel, expected)
 }
 
 func TestGetHeaders(t *testing.T) {
@@ -151,22 +129,20 @@ func TestGetRootList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetRootListResponse{
-		StatusCode: http.StatusOK,
-		Bananas: &[]xmlgroup.Banana{
-			xmlgroup.Banana{
-				Name:       to.StringPtr("Cavendish"),
-				Flavor:     to.StringPtr("Sweet"),
-				Expiration: toTimePtr(time.RFC3339Nano, "2018-02-28T00:40:00.123Z"),
-			},
-			xmlgroup.Banana{
-				Name:       to.StringPtr("Plantain"),
-				Flavor:     to.StringPtr("Savory"),
-				Expiration: toTimePtr(time.RFC3339Nano, "2018-02-28T00:40:00.123Z"),
-			},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &[]xmlgroup.Banana{
+		xmlgroup.Banana{
+			Name:       to.StringPtr("Cavendish"),
+			Flavor:     to.StringPtr("Sweet"),
+			Expiration: toTimePtr(time.RFC3339Nano, "2018-02-28T00:40:00.123Z"),
+		},
+		xmlgroup.Banana{
+			Name:       to.StringPtr("Plantain"),
+			Flavor:     to.StringPtr("Savory"),
+			Expiration: toTimePtr(time.RFC3339Nano, "2018-02-28T00:40:00.123Z"),
 		},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.Bananas, expected)
 }
 
 func TestGetRootListSingleItem(t *testing.T) {
@@ -175,17 +151,15 @@ func TestGetRootListSingleItem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetRootListSingleItemResponse{
-		StatusCode: http.StatusOK,
-		Bananas: &[]xmlgroup.Banana{
-			xmlgroup.Banana{
-				Name:       to.StringPtr("Cavendish"),
-				Flavor:     to.StringPtr("Sweet"),
-				Expiration: toTimePtr(time.RFC3339Nano, "2018-02-28T00:40:00.123Z"),
-			},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &[]xmlgroup.Banana{
+		xmlgroup.Banana{
+			Name:       to.StringPtr("Cavendish"),
+			Flavor:     to.StringPtr("Sweet"),
+			Expiration: toTimePtr(time.RFC3339Nano, "2018-02-28T00:40:00.123Z"),
 		},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.Bananas, expected)
 }
 
 func TestGetServiceProperties(t *testing.T) {
@@ -194,40 +168,38 @@ func TestGetServiceProperties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetServicePropertiesResponse{
-		StatusCode: http.StatusOK,
-		StorageServiceProperties: &xmlgroup.StorageServiceProperties{
-			HourMetrics: &xmlgroup.Metrics{
-				Version:     to.StringPtr("1.0"),
-				Enabled:     to.BoolPtr(true),
-				IncludeApIs: to.BoolPtr(false),
-				RetentionPolicy: &xmlgroup.RetentionPolicy{
-					Enabled: to.BoolPtr(true),
-					Days:    to.Int32Ptr(7),
-				},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.StorageServiceProperties{
+		HourMetrics: &xmlgroup.Metrics{
+			Version:     to.StringPtr("1.0"),
+			Enabled:     to.BoolPtr(true),
+			IncludeApIs: to.BoolPtr(false),
+			RetentionPolicy: &xmlgroup.RetentionPolicy{
+				Enabled: to.BoolPtr(true),
+				Days:    to.Int32Ptr(7),
 			},
-			Logging: &xmlgroup.Logging{
-				Version: to.StringPtr("1.0"),
-				Delete:  to.BoolPtr(true),
-				Read:    to.BoolPtr(false),
-				Write:   to.BoolPtr(true),
-				RetentionPolicy: &xmlgroup.RetentionPolicy{
-					Enabled: to.BoolPtr(true),
-					Days:    to.Int32Ptr(7),
-				},
+		},
+		Logging: &xmlgroup.Logging{
+			Version: to.StringPtr("1.0"),
+			Delete:  to.BoolPtr(true),
+			Read:    to.BoolPtr(false),
+			Write:   to.BoolPtr(true),
+			RetentionPolicy: &xmlgroup.RetentionPolicy{
+				Enabled: to.BoolPtr(true),
+				Days:    to.Int32Ptr(7),
 			},
-			MinuteMetrics: &xmlgroup.Metrics{
-				Version:     to.StringPtr("1.0"),
-				Enabled:     to.BoolPtr(true),
-				IncludeApIs: to.BoolPtr(true),
-				RetentionPolicy: &xmlgroup.RetentionPolicy{
-					Enabled: to.BoolPtr(true),
-					Days:    to.Int32Ptr(7),
-				},
+		},
+		MinuteMetrics: &xmlgroup.Metrics{
+			Version:     to.StringPtr("1.0"),
+			Enabled:     to.BoolPtr(true),
+			IncludeApIs: to.BoolPtr(true),
+			RetentionPolicy: &xmlgroup.RetentionPolicy{
+				Enabled: to.BoolPtr(true),
+				Days:    to.Int32Ptr(7),
 			},
 		},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.StorageServiceProperties, expected)
 }
 
 func TestGetSimple(t *testing.T) {
@@ -236,26 +208,24 @@ func TestGetSimple(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetSimpleResponse{
-		StatusCode: http.StatusOK,
-		Slideshow: &xmlgroup.Slideshow{
-			Author: to.StringPtr("Yours Truly"),
-			Date:   to.StringPtr("Date of publication"),
-			Title:  to.StringPtr("Sample Slide Show"),
-			Slides: &[]xmlgroup.Slide{
-				xmlgroup.Slide{
-					Title: to.StringPtr("Wake up to WonderWidgets!"),
-					Type:  to.StringPtr("all"),
-				},
-				xmlgroup.Slide{
-					Items: &[]string{"Why WonderWidgets are great", "", "Who buys WonderWidgets"},
-					Title: to.StringPtr("Overview"),
-					Type:  to.StringPtr("all"),
-				},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.Slideshow{
+		Author: to.StringPtr("Yours Truly"),
+		Date:   to.StringPtr("Date of publication"),
+		Title:  to.StringPtr("Sample Slide Show"),
+		Slides: &[]xmlgroup.Slide{
+			xmlgroup.Slide{
+				Title: to.StringPtr("Wake up to WonderWidgets!"),
+				Type:  to.StringPtr("all"),
+			},
+			xmlgroup.Slide{
+				Items: &[]string{"Why WonderWidgets are great", "", "Who buys WonderWidgets"},
+				Title: to.StringPtr("Overview"),
+				Type:  to.StringPtr("all"),
 			},
 		},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.Slideshow, expected)
 }
 
 func TestGetWrappedLists(t *testing.T) {
@@ -264,14 +234,12 @@ func TestGetWrappedLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLGetWrappedListsResponse{
-		StatusCode: http.StatusOK,
-		AppleBarrel: &xmlgroup.AppleBarrel{
-			BadApples:  &[]string{"Red Delicious"},
-			GoodApples: &[]string{"Fuji", "Gala"},
-		},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.AppleBarrel{
+		BadApples:  &[]string{"Red Delicious"},
+		GoodApples: &[]string{"Fuji", "Gala"},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.AppleBarrel, expected)
 }
 
 func TestJSONInput(t *testing.T) {
@@ -292,39 +260,37 @@ func TestListContainers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := &xmlgroup.XMLListContainersResponse{
-		StatusCode: http.StatusOK,
-		ListContainersResponse: &xmlgroup.ListContainersResponse{
-			ServiceEndpoint: to.StringPtr("https://myaccount.blob.core.windows.net/"),
-			MaxResults:      to.Int32Ptr(3),
-			NextMarker:      to.StringPtr("video"),
-			Containers: &[]xmlgroup.Container{
-				xmlgroup.Container{
-					Name: to.StringPtr("audio"),
-					Properties: &xmlgroup.ContainerProperties{
-						LastModified: toTimePtr(time.RFC1123, "Wed, 26 Oct 2016 20:39:39 GMT"),
-						Etag:         to.StringPtr("0x8CACB9BD7C6B1B2"),
-						PublicAccess: xmlgroup.PublicAccessTypeContainer.ToPtr(),
-					},
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusOK)
+	expected := &xmlgroup.ListContainersResponse{
+		ServiceEndpoint: to.StringPtr("https://myaccount.blob.core.windows.net/"),
+		MaxResults:      to.Int32Ptr(3),
+		NextMarker:      to.StringPtr("video"),
+		Containers: &[]xmlgroup.Container{
+			xmlgroup.Container{
+				Name: to.StringPtr("audio"),
+				Properties: &xmlgroup.ContainerProperties{
+					LastModified: toTimePtr(time.RFC1123, "Wed, 26 Oct 2016 20:39:39 GMT"),
+					Etag:         to.StringPtr("0x8CACB9BD7C6B1B2"),
+					PublicAccess: xmlgroup.PublicAccessTypeContainer.ToPtr(),
 				},
-				xmlgroup.Container{
-					Name: to.StringPtr("images"),
-					Properties: &xmlgroup.ContainerProperties{
-						LastModified: toTimePtr(time.RFC1123, "Wed, 26 Oct 2016 20:39:39 GMT"),
-						Etag:         to.StringPtr("0x8CACB9BD7C1EEEC"),
-					},
+			},
+			xmlgroup.Container{
+				Name: to.StringPtr("images"),
+				Properties: &xmlgroup.ContainerProperties{
+					LastModified: toTimePtr(time.RFC1123, "Wed, 26 Oct 2016 20:39:39 GMT"),
+					Etag:         to.StringPtr("0x8CACB9BD7C1EEEC"),
 				},
-				xmlgroup.Container{
-					Name: to.StringPtr("textfiles"),
-					Properties: &xmlgroup.ContainerProperties{
-						LastModified: toTimePtr(time.RFC1123, "Wed, 26 Oct 2016 20:39:39 GMT"),
-						Etag:         to.StringPtr("0x8CACB9BD7BACAC3"),
-					},
+			},
+			xmlgroup.Container{
+				Name: to.StringPtr("textfiles"),
+				Properties: &xmlgroup.ContainerProperties{
+					LastModified: toTimePtr(time.RFC1123, "Wed, 26 Oct 2016 20:39:39 GMT"),
+					Etag:         to.StringPtr("0x8CACB9BD7BACAC3"),
 				},
 			},
 		},
 	}
-	deepEqualOrFatal(t, result, expected)
+	helpers.DeepEqualOrFatal(t, result.EnumerationResults, expected)
 }
 
 func TestPutACLs(t *testing.T) {
@@ -342,7 +308,7 @@ func TestPutACLs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutComplexTypeRefNoMeta(t *testing.T) {
@@ -356,7 +322,7 @@ func TestPutComplexTypeRefNoMeta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutComplexTypeRefWithMeta(t *testing.T) {
@@ -373,7 +339,7 @@ func TestPutEmptyChildElement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutEmptyList(t *testing.T) {
@@ -384,7 +350,7 @@ func TestPutEmptyList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutEmptyRootList(t *testing.T) {
@@ -393,7 +359,7 @@ func TestPutEmptyRootList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutEmptyWrappedLists(t *testing.T) {
@@ -405,7 +371,7 @@ func TestPutEmptyWrappedLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutRootList(t *testing.T) {
@@ -425,7 +391,7 @@ func TestPutRootList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutRootListSingleItem(t *testing.T) {
@@ -440,7 +406,7 @@ func TestPutRootListSingleItem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutServiceProperties(t *testing.T) {
@@ -478,7 +444,7 @@ func TestPutServiceProperties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutSimple(t *testing.T) {
@@ -502,7 +468,7 @@ func TestPutSimple(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }
 
 func TestPutWrappedLists(t *testing.T) {
@@ -514,5 +480,5 @@ func TestPutWrappedLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	verifyStatusCode(t, result.StatusCode, http.StatusCreated)
+	helpers.VerifyStatusCode(t, result.RawResponse, http.StatusCreated)
 }

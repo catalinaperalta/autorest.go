@@ -171,8 +171,8 @@ function formatParamValue(param: Parameter, imports: ImportManager): string {
 
 // use this to generate the code that will help process values returned in response headers
 function formatHeaderResponseValue(header: LanguageHeader, imports: ImportManager, respObj: string): HeaderResponse {
-  if (respObj[respObj.length-1] == '}') {
-    respObj = respObj.substring(0, respObj.length-1);
+  if (respObj[respObj.length - 1] == '}') {
+    respObj = respObj.substring(0, respObj.length - 1);
   }
   let headerText = <HeaderResponse>{};
   let text = ``;
@@ -250,7 +250,7 @@ function formatHeaderResponseValue(header: LanguageHeader, imports: ImportManage
       headerText.respObj = respObj + `, ${header.name}: &val}`;
       return headerText;
     default:
-      if (respObj[respObj.length-1] == '}') {
+      if (respObj[respObj.length - 1] == '}') {
         headerText.respObj = respObj + "}";
       }
       return headerText;
@@ -364,12 +364,18 @@ function createProtocolResponse(client: string, op: Operation, imports: ImportMa
       }
     }
   }
-  if (getMediaType(resp.protocol) === 'none') {
+  const mediaType = getMediaType(resp.protocol);
+  if (mediaType === 'none') {
     // no response body so nothing to unmarshal
     text += `\treturn &${respObj}, nil\n`;
   } else {
     text += `\tresult := ${respObj}\n`;
-    text += `\treturn &result, resp.UnmarshalAs${getMediaType(resp.protocol)}(&result.${(<SchemaResponse>resp).schema.language.go!.responseValue})\n`;
+    let target = `result.${(<SchemaResponse>resp).schema.language.go!.responseValue}`;
+    // when unmarshalling a wrapped XML array, unmarshal into the response type, not the field
+    if (mediaType === 'XML' && (<SchemaResponse>resp).schema.type === SchemaType.Array) {
+      target = 'result';
+    }
+    text += `\treturn &result, resp.UnmarshalAs${mediaType}(&${target})\n`;
   }
   text += '}\n\n';
   return text;
