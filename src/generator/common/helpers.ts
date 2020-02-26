@@ -95,7 +95,7 @@ export function SortAscending(a: string, b: string): number {
 
 // returns true if the language contains a description
 export function HasDescription(lang: Language): boolean {
-  return (lang.description.length > 0 && !lang.description.startsWith('MISSING'));
+  return (lang.description !== undefined && lang.description.length > 0 && !lang.description.startsWith('MISSING'));
 }
 
 // describes a method's signature, including parameters and return values
