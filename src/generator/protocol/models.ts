@@ -7,7 +7,7 @@ import { Session } from '@azure-tools/autorest-extension-base';
 import { comment, pascalCase } from '@azure-tools/codegen';
 import { ArraySchema, CodeModel, ConstantSchema, ImplementationLocation, ObjectSchema, Language, Schema, SchemaType, Parameter, Property } from '@azure-tools/codemodel';
 import { values } from '@azure-tools/linq';
-import { ContentPreamble, HasDescription, ImportManager, LanguageHeader, SortAscending } from '../common/helpers';
+import { ContentPreamble, HasDescription, ImportManager, isArraySchema, LanguageHeader, SortAscending } from '../common/helpers';
 
 // Creates the content in models.go
 export async function generateModels(session: Session<CodeModel>): Promise<string> {
@@ -225,8 +225,4 @@ function generateOptionalParamsStruct(lang: Language, params: Parameter[]): Stru
     imports.addImportForSchemaType(param.schema);
   }
   return st;
-}
-
-function isArraySchema(resp: Schema): resp is ArraySchema {
-  return (resp as ArraySchema).elementType !== undefined;
 }

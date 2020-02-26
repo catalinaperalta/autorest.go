@@ -235,3 +235,8 @@ export function getEnums(schemas: Schemas): EnumEntry[] {
   enums.sort((a: EnumEntry, b: EnumEntry) => { return SortAscending(a.name, b.name) });
   return enums;
 }
+
+// returns ArraySchema type predicate if the schema is an ArraySchema
+export function isArraySchema(resp: Schema): resp is ArraySchema {
+  return (resp as ArraySchema).elementType !== undefined;
+}

@@ -8,123 +8,20 @@ package xmlgroup
 import (
 	"encoding/xml"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 )
 
-type AccessTier string
-
-const (
-	AccessTierArchive AccessTier = "Archive"
-	AccessTierCool    AccessTier = "Cool"
-	AccessTierHot     AccessTier = "Hot"
-	AccessTierP10     AccessTier = "P10"
-	AccessTierP20     AccessTier = "P20"
-	AccessTierP30     AccessTier = "P30"
-	AccessTierP4      AccessTier = "P4"
-	AccessTierP40     AccessTier = "P40"
-	AccessTierP50     AccessTier = "P50"
-	AccessTierP6      AccessTier = "P6"
-)
-
-func PossibleAccessTierValues() []AccessTier {
-	return []AccessTier{AccessTierArchive, AccessTierCool, AccessTierHot, AccessTierP10, AccessTierP20, AccessTierP30, AccessTierP4, AccessTierP40, AccessTierP50, AccessTierP6}
-}
-
-type ArchiveStatus string
-
-const (
-	ArchiveStatusRehydratePendingToCool ArchiveStatus = "rehydrate-pending-to-cool"
-	ArchiveStatusRehydratePendingToHot  ArchiveStatus = "rehydrate-pending-to-hot"
-)
-
-func PossibleArchiveStatusValues() []ArchiveStatus {
-	return []ArchiveStatus{ArchiveStatusRehydratePendingToCool, ArchiveStatusRehydratePendingToHot}
-}
-
-type BlobType string
-
-const (
-	BlobTypeBlockblob  BlobType = "BlockBlob"
-	BlobTypePageblob   BlobType = "PageBlob"
-	BlobTypeAppendblob BlobType = "AppendBlob"
-)
-
-func PossibleBlobTypeValues() []BlobType {
-	return []BlobType{BlobTypeBlockblob, BlobTypePageblob, BlobTypeAppendblob}
-}
-
-type CopyStatusType string
-
-const (
-	CopyStatusTypePending CopyStatusType = "pending"
-	CopyStatusTypeSuccess CopyStatusType = "success"
-	CopyStatusTypeAborted CopyStatusType = "aborted"
-	CopyStatusTypeFailed  CopyStatusType = "failed"
-)
-
-func PossibleCopyStatusTypeValues() []CopyStatusType {
-	return []CopyStatusType{CopyStatusTypePending, CopyStatusTypeSuccess, CopyStatusTypeAborted, CopyStatusTypeFailed}
-}
-
-type LeaseDurationType string
-
-const (
-	LeaseDurationTypeInfinite LeaseDurationType = "infinite"
-	LeaseDurationTypeFixed    LeaseDurationType = "fixed"
-)
-
-func PossibleLeaseDurationTypeValues() []LeaseDurationType {
-	return []LeaseDurationType{LeaseDurationTypeInfinite, LeaseDurationTypeFixed}
-}
-
-type LeaseStateType string
-
-const (
-	LeaseStateTypeAvailable LeaseStateType = "available"
-	LeaseStateTypeLeased    LeaseStateType = "leased"
-	LeaseStateTypeExpired   LeaseStateType = "expired"
-	LeaseStateTypeBreaking  LeaseStateType = "breaking"
-	LeaseStateTypeBroken    LeaseStateType = "broken"
-)
-
-func PossibleLeaseStateTypeValues() []LeaseStateType {
-	return []LeaseStateType{LeaseStateTypeAvailable, LeaseStateTypeLeased, LeaseStateTypeExpired, LeaseStateTypeBreaking, LeaseStateTypeBroken}
-}
-
-type LeaseStatusType string
-
-const (
-	LeaseStatusTypeLocked   LeaseStatusType = "locked"
-	LeaseStatusTypeUnlocked LeaseStatusType = "unlocked"
-)
-
-func PossibleLeaseStatusTypeValues() []LeaseStatusType {
-	return []LeaseStatusType{LeaseStatusTypeLocked, LeaseStatusTypeUnlocked}
-}
-
-type PublicAccessType string
-
-const (
-	PublicAccessTypeBlob      PublicAccessType = "blob"
-	PublicAccessTypeContainer PublicAccessType = "container"
-)
-
-func PossiblePublicAccessTypeValues() []PublicAccessType {
-	return []PublicAccessType{PublicAccessTypeBlob, PublicAccessTypeContainer}
-}
-
-func (c PublicAccessType) ToPtr() *PublicAccessType {
-	return &c
-}
-
 // An Access policy
 type AccessPolicy struct {
 	// the date-time the policy expires
 	Expiry *time.Time `xml:"Expiry"`
+
 	// the permissions for the acl policy
 	Permission *string `xml:"Permission"`
+
 	// the date-time the policy is active
 	Start *time.Time `xml:"Start"`
 }
@@ -146,9 +43,11 @@ type Banana struct {
 // An Azure Storage blob
 type Blob struct {
 	Deleted *bool `xml:"Deleted"`
-	// Dictionary of <paths·xml-headers·get·responses·200·headers·custom_header·schema>
+
+	// Dictionary of <string>
 	Metadata *map[string]*string `xml:"string"`
 	Name     *string             `xml:"Name"`
+
 	// Properties of a blob
 	Properties *BlobProperties `xml:"Properties"`
 	Snapshot   *string         `xml:"Snapshot"`
@@ -169,6 +68,7 @@ type BlobProperties struct {
 	ContentDisposition *string        `xml:"Content-Disposition"`
 	ContentEncoding    *string        `xml:"Content-Encoding"`
 	ContentLanguage    *string        `xml:"Content-Language"`
+
 	// Size in bytes
 	ContentLength          *int64             `xml:"Content-Length"`
 	ContentMd5             *string            `xml:"Content-MD5"`
@@ -210,9 +110,10 @@ type ComplexTypeWithMeta struct {
 
 // An Azure Storage container
 type Container struct {
-	// Dictionary of <paths·xml-headers·get·responses·200·headers·custom_header·schema>
+	// Dictionary of <string>
 	Metadata *map[string]*string `xml:"string"`
 	Name     *string             `xml:"Name"`
+
 	// Properties of a container
 	Properties *ContainerProperties `xml:"Properties"`
 }
@@ -254,15 +155,19 @@ func (c *ContainerProperties) UnmarshalXML(d *xml.Decoder, start xml.StartElemen
 type CorsRule struct {
 	// the request headers that the origin domain may specify on the CORS request.
 	AllowedHeaders *string `xml:"AllowedHeaders"`
+
 	// The methods (HTTP request verbs) that the origin domain may use for a CORS request. (comma separated)
 	AllowedMethods *string `xml:"AllowedMethods"`
+
 	// The origin domains that are permitted to make a request against the storage service via CORS. The origin domain is the
 	// domain from which the request originates. Note that the origin must be an exact case-sensitive match with the origin that
 	// the user age sends to the service. You can also use the wildcard character '*' to allow all origin domains to make requests
 	// via CORS.
 	AllowedOrigins *string `xml:"AllowedOrigins"`
+
 	// The response headers that may be sent in the response to the CORS request and exposed by the browser to the request issuer
 	ExposedHeaders *string `xml:"ExposedHeaders"`
+
 	// The maximum amount time that a browser should cache the preflight OPTIONS request.
 	MaxAgeInSeconds *int32 `xml:"MaxAgeInSeconds"`
 }
@@ -328,12 +233,16 @@ type ListContainersResponse struct {
 type Logging struct {
 	// Indicates whether all delete requests should be logged.
 	Delete *bool `xml:"Delete"`
+
 	// Indicates whether all read requests should be logged.
 	Read *bool `xml:"Read"`
+
 	// the retention policy
 	RetentionPolicy *RetentionPolicy `xml:"RetentionPolicy"`
+
 	// The version of Storage Analytics to configure.
 	Version *string `xml:"Version"`
+
 	// Indicates whether all write requests should be logged.
 	Write *bool `xml:"Write"`
 }
@@ -341,10 +250,13 @@ type Logging struct {
 type Metrics struct {
 	// Indicates whether metrics are enabled for the Blob service.
 	Enabled *bool `xml:"Enabled"`
+
 	// Indicates whether metrics should generate summary statistics for called API operations.
 	IncludeApIs *bool `xml:"IncludeAPIs"`
+
 	// the retention policy
 	RetentionPolicy *RetentionPolicy `xml:"RetentionPolicy"`
+
 	// The version of Storage Analytics to configure.
 	Version *string `xml:"Version"`
 }
@@ -354,6 +266,7 @@ type RetentionPolicy struct {
 	// Indicates the number of days that metrics or logging or soft-deleted data should be retained. All data older than this
 	// value will be deleted
 	Days *int32 `xml:"Days"`
+
 	// Indicates whether a retention policy is enabled for the storage service
 	Enabled *bool `xml:"Enabled"`
 }
@@ -362,6 +275,7 @@ type RetentionPolicy struct {
 type RootWithRefAndMeta struct {
 	// I am a complex type with XML node
 	RefToModel *ComplexTypeWithMeta `xml:"XMLComplexTypeWithMeta"`
+
 	// Something else (just to avoid flattening)
 	Something *string `xml:"Something"`
 }
@@ -370,6 +284,7 @@ type RootWithRefAndMeta struct {
 type RootWithRefAndNoMeta struct {
 	// I am a complex type with no XML node
 	RefToModel *ComplexTypeNoMeta `xml:"RefToModel"`
+
 	// Something else (just to avoid flattening)
 	Something *string `xml:"Something"`
 }
@@ -378,6 +293,7 @@ type RootWithRefAndNoMeta struct {
 type SignedIDentifier struct {
 	// An Access policy
 	AccessPolicy *AccessPolicy `xml:"AccessPolicy"`
+
 	// a unique id
 	ID *string `xml:"Id"`
 }
@@ -401,12 +317,15 @@ type Slideshow struct {
 type StorageServiceProperties struct {
 	// The set of CORS rules.
 	Cors *[]CorsRule `xml:"Cors>CorsRule"`
+
 	// The default version to use for requests to the Blob service if an incoming request's version is not specified. Possible
 	// values include version 2008-10-27 and all more recent versions
 	DefaultServiceVersion *string `xml:"DefaultServiceVersion"`
+
 	// the retention policy
 	DeleteRetentionPolicy *RetentionPolicy `xml:"DeleteRetentionPolicy"`
 	HourMetrics           *Metrics         `xml:"HourMetrics"`
+
 	// Azure Analytics Logging settings.
 	Logging       *Logging `xml:"Logging"`
 	MinuteMetrics *Metrics `xml:"MinuteMetrics"`
@@ -414,200 +333,218 @@ type StorageServiceProperties struct {
 
 // XMLGetACLsResponse contains the response from method XML.GetACLs.
 type XMLGetACLsResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
+
 	// a collection of signed identifiers
 	SignedIdentifiers *[]SignedIDentifier `xml:"SignedIdentifier"`
 }
 
 // XMLGetComplexTypeRefNoMetaResponse contains the response from method XML.GetComplexTypeRefNoMeta.
 type XMLGetComplexTypeRefNoMetaResponse struct {
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
+
 	// I am root, and I ref a model with no meta
-	RootWithRefAndNoMeta *RootWithRefAndNoMeta
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	RootWithRefAndNoMeta *RootWithRefAndNoMeta `xml:"RootWithRefAndNoMeta"`
 }
 
 // XMLGetComplexTypeRefWithMetaResponse contains the response from method XML.GetComplexTypeRefWithMeta.
 type XMLGetComplexTypeRefWithMetaResponse struct {
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
+
 	// I am root, and I ref a model WITH meta
-	RootWithRefAndMeta *RootWithRefAndMeta
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	RootWithRefAndMeta *RootWithRefAndMeta `xml:"RootWithRefAndMeta"`
 }
 
 // XMLGetEmptyChildElementResponse contains the response from method XML.GetEmptyChildElement.
 type XMLGetEmptyChildElementResponse struct {
 	// A banana.
-	Banana *Banana
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	Banana *Banana `xml:"banana"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLGetEmptyListResponse contains the response from method XML.GetEmptyList.
 type XMLGetEmptyListResponse struct {
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
+
 	// Data about a slideshow
-	Slideshow *Slideshow
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	Slideshow *Slideshow `xml:"slideshow"`
 }
 
 // XMLGetEmptyRootListResponse contains the response from method XML.GetEmptyRootList.
 type XMLGetEmptyRootListResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
-	Bananas    *[]Banana `xml:"banana"`
+	Bananas *[]Banana `xml:"banana"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLGetEmptyWrappedListsResponse contains the response from method XML.GetEmptyWrappedLists.
 type XMLGetEmptyWrappedListsResponse struct {
 	// A barrel of apples.
-	AppleBarrel *AppleBarrel
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	AppleBarrel *AppleBarrel `xml:"AppleBarrel"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLGetHeadersResponse contains the response from method XML.GetHeaders.
 type XMLGetHeadersResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// CustomHeader contains the information returned from the CustomHeader header response.
+	CustomHeader *string `xml:"CustomHeader"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLGetRootListResponse contains the response from method XML.GetRootList.
 type XMLGetRootListResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
-	Bananas    *[]Banana `xml:"banana"`
+	Bananas *[]Banana `xml:"banana"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLGetRootListSingleItemResponse contains the response from method XML.GetRootListSingleItem.
 type XMLGetRootListSingleItemResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
-	Bananas    *[]Banana `xml:"banana"`
+	Bananas *[]Banana `xml:"banana"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLGetServicePropertiesResponse contains the response from method XML.GetServiceProperties.
 type XMLGetServicePropertiesResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
+
 	// Storage Service Properties.
-	StorageServiceProperties *StorageServiceProperties
+	StorageServiceProperties *StorageServiceProperties `xml:"StorageServiceProperties"`
 }
 
 // XMLGetSimpleResponse contains the response from method XML.GetSimple.
 type XMLGetSimpleResponse struct {
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
+
 	// Data about a slideshow
-	Slideshow *Slideshow
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	Slideshow *Slideshow `xml:"slideshow"`
 }
 
 // XMLGetWrappedListsResponse contains the response from method XML.GetWrappedLists.
 type XMLGetWrappedListsResponse struct {
 	// A barrel of apples.
-	AppleBarrel *AppleBarrel
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	AppleBarrel *AppleBarrel `xml:"AppleBarrel"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLJSONInputResponse contains the response from method XML.JSONInput.
 type XMLJSONInputResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLJSONOutputResponse contains the response from method XML.JSONOutput.
 type XMLJSONOutputResponse struct {
 	JSONOutput *JSONOutput
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLListBlobsResponse contains the response from method XML.ListBlobs.
 type XMLListBlobsResponse struct {
 	// An enumeration of blobs
-	ListBlobsResponse *ListBlobsResponse
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	EnumerationResults *ListBlobsResponse `xml:"EnumerationResults"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLListContainersResponse contains the response from method XML.ListContainers.
 type XMLListContainersResponse struct {
 	// An enumeration of containers
-	ListContainersResponse *ListContainersResponse
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	EnumerationResults *ListContainersResponse `xml:"EnumerationResults"`
+
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutACLsResponse contains the response from method XML.PutACLs.
 type XMLPutACLsResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutComplexTypeRefNoMetaResponse contains the response from method XML.PutComplexTypeRefNoMeta.
 type XMLPutComplexTypeRefNoMetaResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutComplexTypeRefWithMetaResponse contains the response from method XML.PutComplexTypeRefWithMeta.
 type XMLPutComplexTypeRefWithMetaResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutEmptyChildElementResponse contains the response from method XML.PutEmptyChildElement.
 type XMLPutEmptyChildElementResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutEmptyListResponse contains the response from method XML.PutEmptyList.
 type XMLPutEmptyListResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutEmptyRootListResponse contains the response from method XML.PutEmptyRootList.
 type XMLPutEmptyRootListResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutEmptyWrappedListsResponse contains the response from method XML.PutEmptyWrappedLists.
 type XMLPutEmptyWrappedListsResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutRootListResponse contains the response from method XML.PutRootList.
 type XMLPutRootListResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutRootListSingleItemResponse contains the response from method XML.PutRootListSingleItem.
 type XMLPutRootListSingleItemResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutServicePropertiesResponse contains the response from method XML.PutServiceProperties.
 type XMLPutServicePropertiesResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutSimpleResponse contains the response from method XML.PutSimple.
 type XMLPutSimpleResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
 
 // XMLPutWrappedListsResponse contains the response from method XML.PutWrappedLists.
 type XMLPutWrappedListsResponse struct {
-	// StatusCode contains the HTTP status code.
-	StatusCode int
+	// RawResponse contains the underlying HTTP response.
+	RawResponse *http.Response
 }
