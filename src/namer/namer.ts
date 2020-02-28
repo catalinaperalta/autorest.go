@@ -92,7 +92,7 @@ async function process(session: Session<CodeModel>) {
       details.name = getEscapedReservedName(capitalizeAcronyms(pascalCase(details.name)), 'Method');
       // track any optional parameters
       const optionalParams = new Array<Parameter>();
-      for (const param of values(op.requests![0].parameters)) {
+      for (const param of values(op.parameters)) {
         const paramDetails = <Language>param.language.go;
         paramDetails.name = getEscapedReservedName(camelCase(paramDetails.name), 'Parameter');
         if (param.required !== true) {

@@ -5,7 +5,7 @@
 
 import { Session } from '@azure-tools/autorest-extension-base';
 import { comment } from '@azure-tools/codegen';
-import { CodeModel, ChoiceValue, ImplementationLocation, Language, Operation, Schema, Schemas, SchemaType, ArraySchema, DictionarySchema } from '@azure-tools/codemodel';
+import { CodeModel, ChoiceValue, ImplementationLocation, Language, Operation, Parameter, Schema, Schemas, SchemaType, ArraySchema, DictionarySchema } from '@azure-tools/codemodel';
 import { length, values } from '@azure-tools/linq';
 
 export interface LanguageHeader extends Language {
@@ -139,34 +139,41 @@ export function formatParamInfoTypeName(param: ParamInfo): string {
 // creates ParamInfo for the specified operation.
 // each entry is tuple of param name/param type
 export function generateParameterInfo(op: Operation): ParamInfo[] {
-  const params = new Array<ParamInfo>();
-  for (const param of values(op.requests![0].parameters)) {
-    if (param.schema.type === SchemaType.Constant) {
-      // don't generate a parameter for a constant
-      continue;
+  const paramInfos = new Array<ParamInfo>();
+  const process = function (params: Parameter[]) {
+    for (const param of values(params)) {
+      if (param.schema.type === SchemaType.Constant) {
+        // don't generate a parameter for a constant
+        continue;
 
+      }
+      if (param.language.go!.name === 'host' || param.language.go!.name === '$host') {
+        // don't include the URL param as we include that elsewhere as a url.URL
+        continue;
+      }
+      if (param.implementation === ImplementationLocation.Method && param.required !== true) {
+        // omit method-optional params as they're grouped in the optional params type
+        continue;
+      }
+      // include client and method params
+      const global = param.implementation === ImplementationLocation.Client;
+      paramInfos.push(new paramInfo(param.language.go!.name, param.schema.language.go!.name, global, param.required === true));
     }
-    if (param.language.go!.name === 'host' || param.language.go!.name === '$host') {
-      // don't include the URL param as we include that elsewhere as a url.URL
-      continue;
-    }
-    if (param.implementation === ImplementationLocation.Method && param.required !== true) {
-      // omit method-optional params as they're grouped in the optional params type
-      continue;
-    }
-    // include client and method params
-    const global = param.implementation === ImplementationLocation.Client;
-    params.push(new paramInfo(param.language.go!.name, param.schema.language.go!.name, global, param.required === true));
+  };
+  if (op.parameters) {
+    process(op.parameters);
   }
-
+  if (op.requests![0].parameters) {
+    process(op.requests![0].parameters)
+  }
   // move global optional params to the end of the slice
-  params.sort(sortParamInfoByRequired);
+  paramInfos.sort(sortParamInfoByRequired);
   // if there's a method-optional params struct add it last
   if (op.requests![0].language.go!.optionalParam) {
-    params.push(new paramInfo('options', op.requests![0].language.go!.optionalParam.name, false, false));
+    paramInfos.push(new paramInfo('options', op.requests![0].language.go!.optionalParam.name, false, false));
   }
 
-  return params;
+  return paramInfos;
 }
 
 // sorts ParamInfo objects by their required state, ordering required before optional
